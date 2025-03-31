@@ -266,3 +266,49 @@ t_node *ast = parse_expression(&expr);
 1️⃣ t_node *ast → ast es un puntero a un nodo, es decir, el resultado del AST que vamos a construir.
 2️⃣ parse_expression(&expr) → Llamamos a parse_expression() y le pasamos &expr.
 3️⃣ &expr → Obtenemos la dirección de expr, lo que permite que parse_expression() modifique expr directamente.
+
+
+
+
+
+
+Cuando llamamos free_ast(ast), ast apunta al nodo raíz (*)
+¿Por qué if (!node) return; es el caso base de la recursión?
+Ejemplo con nodo 2:
+
+	2 no tiene hijos (left == NULL, right == NULL).
+	Llamamos free_ast(NULL), lo que hace que la función simplemente retorne sin hacer nada.
+
+🔥 ¿En qué Orden se Liberan los Nodos?
+Igual que como se usan en evaluate
+
+📌 Orden de ejecución en free_ast() sigue la estrategia de Recorrido en Postorden (Postorder Traversal).
+📌 Esto significa que se liberan los nodos en este orden:
+
+1. Liberamos `left` (si existe).
+2. Liberamos `right` (si existe).
+3. Liberamos el nodo actual.
+
+evaluate(free_ast(*))   → Raíz (espera a liberar todo primero)
+├── evaluate(free_ast(2)) → Liberamos `2` (nodo hoja)
+├── evaluate(free_ast(+)) → Vamos a liberar `+`
+│   ├── evaluate(free_ast(3)) → Liberamos `3` (nodo hoja)
+│   ├── evaluate(free_ast(4)) → Liberamos `4` (nodo hoja)
+│   └── free(+) → Ahora podemos liberar `+`
+└── free(*) → Finalmente liberamos `*`
+
+1️⃣ Llamamos a `free_ast(*)`
+2️⃣ Bajamos al `left`, liberamos `2`
+3️⃣ Bajamos al `right`, entramos en `free_ast(+)`
+4️⃣ Bajamos al `left` de `+`, liberamos `3`
+5️⃣ Bajamos al `right` de `+`, liberamos `4`
+6️⃣ Ahora que `3` y `4` están liberados, liberamos `+`
+7️⃣ Finalmente liberamos `*`
+
+free_ast(*)
+├── free_ast(2)  // Se libera primero
+├── free_ast(+)
+│   ├── free_ast(3)  // Se libera segundo
+│   ├── free_ast(4)  // Se libera tercero
+│   ├── free(+)  // Se libera después de 3 y 4
+└── free(*)  // Se libera al final

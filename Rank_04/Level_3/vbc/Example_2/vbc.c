@@ -74,11 +74,22 @@ t_node *parse_expression(char **expr)
 
 	while (**expr == '+') // ** lo que hay en expr guardado
 	{
-		char op = *(*expr)++; // es la direccion, el avanzar char *(*expr)
+		char op = *(*expr)++; // es la direccion + avanzar puntero char *(*expr)
 		node = create_operator_node(op, node, parse_term(expr));
 	}
 
 	return node;
+}
+
+void free_ast(t_node *node)
+{
+	if (!node)
+		return;  // Si el nodo es NULL, no hacemos nada
+
+	free_ast(node->left);   // Liberamos subárbol izquierdo
+	free_ast(node->right);  // Liberamos subárbol derecho
+
+	free(node);  // Liberamos nodo actual
 }
 
 
@@ -95,11 +106,34 @@ int main(int argc, char **argv)
 		char *expr = argv[1];
 		t_node *ast = parse_expression(&expr);
 		printf("%d\n", evaluate(ast));
+		free(ast);
 	}
 
 	return 0;
 }
 
+
+// Diferencias entre *(*expr)++, **expr++, y (**expr++) (piensa en jerarquia de operaciones ())
+/*
+📌 Paso a paso:
+1️⃣ *expr obtiene el primer carácter de la cadena ('3').
+2️⃣ (*expr)++ avanza el puntero expr al siguiente carácter ('+').
+3️⃣ *(*expr)++ primero obtiene '3' y luego avanza expr a '+'.
+
+📌 Estado de memoria antes y después:
+
+Antes: expr → "3+4"
+           ↑
+Después: expr → "3+4"
+                ↑
+
+📌 Resultado:
+
+    c = '3'
+    expr ahora apunta a '+'.
+
+✅ Este es el correcto si queremos leer el carácter actual y avanzar el puntero.
+*/
 
 /*
 void run_test(char *expr, int expected)

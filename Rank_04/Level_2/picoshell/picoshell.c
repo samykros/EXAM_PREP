@@ -3,6 +3,18 @@
 #include <stdlib.h>  // exit
 #include <stdio.h>   // perror
 
+
+// Que no te lie: char **cmds[] == ***cmds, es un array de arrays
+// de strings cmds es un array donde cada cmds[i] es otro array.
+// Cada cmds[i] es un char ** (array de strings)
+/*
+cmds = {
+	{"echo", "hi", NULL},  // cmds[0]
+	{"grep", "hi", NULL},  // cmds[1]
+	{"wc", "-l", NULL},    // cmds[2]
+	NULL
+}
+*/
 int picoshell(char **cmds[])
 {
 	int num_cmds = 0;
@@ -38,6 +50,9 @@ int picoshell(char **cmds[])
 		if (pid == 0)
 		{ // Código del hijo
 			// Si no es el primer comando, redirigir stdin desde el pipe anterior
+			// El pipe que debe ser el stdin de un proceso es el pipe creado en
+			// la iteración anterior, por eso pipes[i - 1]
+			//  Resumen, pipes[i - 1][0] == "leer del pipe que escribió el comando anterior"
 			if (i > 0)
 				dup2(pipes[i - 1][0], STDIN_FILENO);
 
@@ -52,10 +67,18 @@ int picoshell(char **cmds[])
 				close(pipes[j][1]); // Cerrar escritura del pipe
 			}
 
-			// Ejecutar el comando
+			// Reemplaza el proceso actual con el comando ejecutado
+			// Un proceso es un programa en ejecucion, acuerdate de lo que hace fork
 			execvp(cmds[i][0], cmds[i]);
 			// cmds[i][0] → Nombre del comando (ejemplo: "ls").
 			// cmds[i] → Lista de argumentos ({"ls", "-l", NULL}).
+			// Todas las listas tienen max 3 argumentos (creo), comando, comando, NULL
+			// 1. El shell (picoshell) ejecuta `fork()` para `ls`, creando un proceso hijo.
+			// 2. `ls` se ejecuta en ese proceso hijo usando `execvp("ls", {"ls", "-l", NULL})`.
+			// 3. El shell ejecuta `fork()` para `grep`, creando otro proceso hijo.
+			// 4. `grep` se ejecuta en ese proceso hijo con `execvp("grep", {"grep", "txt", NULL})`.
+			// 5. El shell ejecuta `fork()` para `wc`, creando otro proceso hijo.
+			// 6. `wc` se ejecuta en ese proceso hijo con `execvp("wc", {"wc", "-l", NULL})`.
 			perror("execvp"); // Si llega aquí, execvp falló
 			exit(1);
 		}

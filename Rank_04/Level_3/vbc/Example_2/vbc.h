@@ -14,3 +14,4 @@ int			evaluate(t_node *node);
 t_node		*parse_term(char **expr);
 t_node		*parse_expression(char **expr);
 t_node		*parse_factor(char **expr);
+void		free_ast(t_node *node);
