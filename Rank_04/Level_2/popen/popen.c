@@ -6,12 +6,12 @@
 
 int ft_popen(const char *cmd, char *const argv[], char type)
 {
-	pid_t pid = fork();
-	if (pid == -1)
-		return -1;
-
 	int pipe_fds[2]; // Creamos el pipe, el, solo 1, no como picoshell
 	if (pipe(pipe_fds) == -1)
+		return -1;
+	
+	pid_t pid = fork();
+	if (pid == -1)
 		return -1;
 
 	if (pid == 0)
